@@ -1,16 +1,37 @@
 ﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
+using TodoApi.Models;
+using System.Linq;
+using System.Net.Http;
+using Newtonsoft.Json;
+using Microsoft.AspNetCore.Mvc.Filters;
+using System.Net.Http.Headers;
 
 namespace TodoApi.Controllers
 {
     [Route("api/[controller]")] 
     public class ValuesController : Controller
     {
+
+        private readonly TodoContext _context;
+
+        public ValuesController (TodoContext context)
+        {
+            _context = context;
+
+            if (_context.TodoItems.Count() == 0)
+            {
+                _context.TodoItems.Add(new TodoItem { Name = "Item1" });
+                _context.SaveChanges();
+            }
+        }
+
         // GET api/values
         [HttpGet]
-        public IEnumerable<string> Get()
+        public IEnumerable<TodoItem> Get()
         {
-            return new string[] { "value1", "value2" };
+            //return new string[] { "value1", "value2" };
+            return _context.TodoItems.ToList();
         }
 
         // GET api/values/5
@@ -22,8 +43,17 @@ namespace TodoApi.Controllers
 
         // POST api/values
         [HttpPost]
-        public void Post([FromBody]string value)
+        public IActionResult Create([FromBody] TodoItem item)
         {
+            if (item == null)
+            {
+                return BadRequest();
+            }
+
+            _context.TodoItems.Add(item);
+            _context.SaveChanges();
+
+            return CreatedAtRoute("GetTodo", new { id = item.Id }, item);
         }
 
         // PUT api/values/5
